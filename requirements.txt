@@ -1,0 +1,22 @@
+fastapi
+uvicorn
+python-dotenv
+neo4j
+psycopg2-binary
+redis
+spacy
+textblob
+chromadb
+sentence-transformers
+prophet
+cmdstanpy
+pandas
+langchain
+langgraph
+langchain-groq
+networkx
+requests
+
+# After installing requirements, also run:
+# python -m spacy download en_core_web_sm
+# python -m textblob.download_corpora
