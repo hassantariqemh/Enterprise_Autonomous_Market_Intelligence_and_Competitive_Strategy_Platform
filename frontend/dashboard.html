@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Executive Dashboard - Market Intelligence Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, sans-serif; background: #0f1117; color: #e5e7eb; margin: 0; padding: 24px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { color: #9ca3af; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  .card { background: #1a1d29; border-radius: 12px; padding: 20px; border: 1px solid #2a2d3a; }
+  .card.wide { grid-column: span 2; }
+  .card h2 { font-size: 15px; margin: 0 0 16px 0; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #2a2d3a; vertical-align: top; }
+  .status { padding: 4px 10px; border-radius: 6px; font-size: 12px; display: inline-block; }
+  .status.ok { background: #14532d; color: #86efac; }
+  .status.warn { background: #713f12; color: #fde047; }
+  .priority-high { color: #f87171; font-weight: 600; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>Executive Dashboard</h1>
+  <div class="subtitle">Market Intelligence & Competitive Strategy Platform</div>
+  <div class="grid">
+    <div class="card"><h2>Market Share (by product count)</h2><canvas id="marketShareChart"></canvas></div>
+    <div class="card"><h2>Competitor Activity</h2><canvas id="activityChart"></canvas></div>
+    <div class="card"><h2>Product Sentiment & Rating</h2><table id="sentimentTable"></table></div>
+    <div class="card"><h2>3-Month Activity Forecast <span id="forecastStatus"></span></h2><canvas id="forecastChart"></canvas></div>
+    <div class="card"><h2>Risk & Opportunity by Competitor</h2><table id="riskTable"></table></div>
+    <div class="card"><h2>Innovation Index by Competitor</h2><table id="innovationTable"></table></div>
+    <div class="card wide"><h2>AI Strategic Recommendations</h2><table id="strategyTable"></table></div>
+  </div>
+
+<script>
+async function loadDashboard() {
+  const res = await fetch("http://127.0.0.1:8000/api/dashboard");
+  const data = await res.json();
+
+  new Chart(document.getElementById("marketShareChart"), {
+    type: "doughnut",
+    data: {
+      labels: data.market_share_trend.map(d => d.company),
+      datasets: [{ data: data.market_share_trend.map(d => d.product_count),
+        backgroundColor: ["#3b82f6","#ef4444","#f59e0b","#10b981","#8b5cf6"] }]
+    }
+  });
+
+  new Chart(document.getElementById("activityChart"), {
+    type: "bar",
+    data: {
+      labels: data.competitor_activity.map(d => d.company),
+      datasets: [{ label: "Events", data: data.competitor_activity.map(d => d.event_count), backgroundColor: "#3b82f6" }]
+    },
+    options: { plugins: { legend: { display: false } } }
+  });
+
+  const table = document.getElementById("sentimentTable");
+  table.innerHTML = "<tr><th>Product</th><th>Sentiment</th><th>Rating</th></tr>" +
+    data.sentiment_overview.map(r =>
+      `<tr><td>${r.product}</td><td>${r.avg_sentiment.toFixed(2)}</td><td>${r.avg_rating ? r.avg_rating.toFixed(1) + ' ⭐' : '—'}</td></tr>`
+    ).join("");
+
+  const fc = data.overall_forecast;
+  document.getElementById("forecastStatus").className = "status " + (fc.status === "ok" ? "ok" : "warn");
+  document.getElementById("forecastStatus").textContent = fc.status;
+
+  if (fc.status === "ok") {
+    new Chart(document.getElementById("forecastChart"), {
+      type: "line",
+      data: {
+        labels: fc.forecast.map(f => f.month),
+        datasets: [{ label: "Predicted Activity", data: fc.forecast.map(f => f.predicted_activity),
+          borderColor: "#10b981", backgroundColor: "rgba(16,185,129,0.1)", fill: true, tension: 0.3 }]
+      }
+    });
+  }
+
+  const riskTable = document.getElementById("riskTable");
+  riskTable.innerHTML = "<tr><th>Company</th><th>Risk</th><th>Opportunity</th></tr>" +
+    data.risk_and_opportunity.map(r =>
+      `<tr><td>${r.company}</td><td>${(r.risk_score*100).toFixed(0)}%</td><td>${(r.opportunity_score*100).toFixed(0)}%</td></tr>`
+    ).join("");
+
+  const innovationTable = document.getElementById("innovationTable");
+  innovationTable.innerHTML = "<tr><th>Company</th><th>Index</th></tr>" +
+    data.innovation_index.map(r =>
+      `<tr><td>${r.company}</td><td>${(r.innovation_index*100).toFixed(0)}%</td></tr>`
+    ).join("");
+
+  const strategyTable = document.getElementById("strategyTable");
+  strategyTable.innerHTML = "<tr><th>Company</th><th>Category</th><th>Recommendation</th></tr>" +
+    data.strategic_recommendations.map(r =>
+      `<tr><td>${r.company}</td><td>${r.category}<br><span class="priority-high">${r.priority}</span></td><td>${r.recommendation}</td></tr>`
+    ).join("");
+}
+loadDashboard();
+</script>
+</body>
+</html>
