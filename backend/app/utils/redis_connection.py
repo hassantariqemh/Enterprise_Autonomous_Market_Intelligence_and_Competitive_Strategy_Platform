@@ -4,10 +4,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "10356"))
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
-REDIS_USERNAME = os.getenv("REDIS_USERNAME", "default")
+REDIS_HOST = os.getenv(
+    "REDIS_HOST",
+    "localhost"
+)
+
+REDIS_PORT = int(
+    os.getenv(
+        "REDIS_PORT",
+        "6379"
+    )
+)
+
+REDIS_USERNAME = os.getenv(
+    "REDIS_USERNAME",
+    "default"
+)
+
+REDIS_PASSWORD = os.getenv(
+    "REDIS_PASSWORD",
+    ""
+)
 
 redis_client = redis.Redis(
     host=REDIS_HOST,
